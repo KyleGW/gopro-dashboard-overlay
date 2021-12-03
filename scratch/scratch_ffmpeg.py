@@ -9,7 +9,7 @@ if __name__ == "__main__":
     overlay = True
 
     if overlay:
-        generator = FFMPEGOverlay(input="/data/richja/gopro/GH010064.MP4", output="output.mp4")
+        generator = FFMPEGOverlay(inputs="/data/richja/gopro/GH010064.MP4", output="output.mp4")
     else:
         generator = FFMPEGGenerate(output="output.mp4")
 

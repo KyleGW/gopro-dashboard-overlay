@@ -388,21 +388,26 @@ class StreamScalers:
         [s.accept(interpreted) for s in self.scalers]
 
 
-def timeseries_from(filepath, units, unhandled=lambda x: None, on_drop=lambda reason: None):
-    meta = GPMDInterpreter(GPMDParser(load_gpmd_from(filepath)).items).interpret()
-
+def timeseries_from(filepaths, units, unhandled=lambda x: None, on_drop=lambda reason: None):
     timeseries = Timeseries()
-    gps_scaler = GPS5Scaler(units=units,
-                            max_dop=6.0,
-                            on_item=lambda entry: timeseries.add(entry),
-                            on_drop=on_drop
-                            )
 
-    for item in meta:
-        if item.understood:
-            gps_scaler.accept(item)
-        else:
-            unhandled(item.item)
+    if type(filepaths) != list:
+        filepaths = [filepaths]
+
+    for filepath in filepaths:
+        meta = GPMDInterpreter(GPMDParser(load_gpmd_from(filepath)).items).interpret()
+
+        gps_scaler = GPS5Scaler(units=units,
+                                max_dop=6.0,
+                                on_item=lambda entry: timeseries.add(entry),
+                                on_drop=on_drop
+                                )
+
+        for item in meta:
+            if item.understood:
+                gps_scaler.accept(item)
+            else:
+                unhandled(item.item)
 
     return timeseries
 

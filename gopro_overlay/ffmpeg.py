@@ -1,6 +1,7 @@
 import contextlib
 import re
 import subprocess
+import tempfile
 from array import array
 
 
@@ -65,14 +66,20 @@ class FFMPEGGenerate:
 
 class FFMPEGOverlay:
 
-    def __init__(self, input, output, vsize=1080, redirect=None):
+    def __init__(self, inputs, output, vsize=1080, redirect=None):
         self.output = output
-        self.input = input
+        self.inputs = inputs if type(inputs) == list else [inputs]
         self.vsize = vsize
         self.redirect = redirect
 
     @contextlib.contextmanager
     def generate(self):
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+            path = f.name
+            for i in self.inputs:
+                f.write(f"file '{i}'\n")
+
         if self.vsize == 1080:
             filter_extra = ""
         else:
@@ -81,7 +88,9 @@ class FFMPEGOverlay:
             "ffmpeg",
             "-y",
             "-loglevel", "info",
-            "-i", self.input,
+            "-safe", "0",
+            "-f", "concat",
+            "-i", path,
             "-f", "rawvideo",
             "-framerate", "10.0",
             "-s", "1920x1080",

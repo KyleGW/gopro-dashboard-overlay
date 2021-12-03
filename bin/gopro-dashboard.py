@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import argparse
 import datetime
 import os
@@ -27,11 +28,14 @@ def temp_file_name():
     return path
 
 
+def glob_inputs(input):
+    return sorted(glob.glob(input))
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Overlay gadgets on to GoPro MP4")
 
-    parser.add_argument("input", help="Input MP4 file")
+    parser.add_argument("input", help="Input MP4 file(s)")
     parser.add_argument("--gpx", help="Use GPX file for location / alt / hr / cadence / temp")
     parser.add_argument("--privacy", help="Set privacy zone (lat,lon,km)")
 
@@ -56,8 +60,18 @@ if __name__ == "__main__":
 
     with PoorTimer("program").timing():
 
-        gopro_timeseries = timeseries_from(args.input, units)
+        inputs = glob_inputs(args.input)
+        if not inputs:
+            print(f"No files specified/found")
+            exit(1)
+
+        print(f"Loading GoPro data from  {inputs}")
+        gopro_timeseries = timeseries_from(inputs, units)
         print(f"GoPro Timeseries has {len(gopro_timeseries)} data points")
+
+        if not len(gopro_timeseries):
+            print("No information from GoPro file")
+            exit(1)
 
         if args.gpx:
             gpx_timeseries = load_timeseries(args.gpx, units)
@@ -110,7 +124,7 @@ if __name__ == "__main__":
                     redirect = temp_file_name()
                     print(f"FFMPEG Output is in {redirect}")
 
-                ffmpeg = FFMPEGOverlay(input=args.input, output=args.output, vsize=args.output_size, redirect=redirect)
+                ffmpeg = FFMPEGOverlay(inputs=inputs, output=args.output, vsize=args.output_size, redirect=redirect)
             else:
                 ffmpeg = FFMPEGGenerate(output=args.output)
 
